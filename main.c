@@ -11,7 +11,8 @@
 #define OP 8
 #define VAR 16
 #define FUNC 32
-#define DONE 64
+#define NONE 64
+#define DONE 128
 
 #define ADD 1
 #define SUB 2
@@ -42,7 +43,11 @@ typedef struct t_node{
 typedef void (*t_func)(t_val *, t_val);
 
 void t_add(t_val *a, t_val b) {
-	if(a->type & b.type & INT){
+	if(a->type == NONE){
+		a->type = b.type;
+		a->u = b.u;
+	}
+	else if(a->type & b.type & INT){
 		a->u.i += b.u.i;
 	}
 	else if(a->type & b.type & FLOAT){
@@ -58,7 +63,11 @@ void t_add(t_val *a, t_val b) {
 }
 
 void t_sub(t_val *a, t_val b) {
-	if(a->type & b.type & INT){
+	if(a->type == NONE){
+		a->type = b.type;
+		a->u = b.u;
+	}
+	else if(a->type & b.type & INT){
 		a->u.i -= b.u.i;
 	}
 	else if(a->type & b.type & FLOAT){
@@ -74,7 +83,11 @@ void t_sub(t_val *a, t_val b) {
 }
 
 void t_eq(t_val *a, t_val b) {
-	if(a->type & b.type & INT){
+	if(a->type == NONE){
+		a->type = b.type;
+		a->u = b.u;
+	}
+	else if(a->type & b.type & INT){
 		a->u.i = b.u.i == a->u.i;
 	}
 	else if(a->type & b.type & FLOAT){
@@ -91,7 +104,11 @@ void t_eq(t_val *a, t_val b) {
 }
 
 void t_mul(t_val *a, t_val b) {
-	if(a->type & b.type & INT){
+	if(a->type == NONE){
+		a->type = b.type;
+		a->u = b.u;
+	}
+	else if(a->type & b.type & INT){
 		a->u.i *= b.u.i;
 	}
 	else if(a->type & b.type & FLOAT){
@@ -133,7 +150,11 @@ void t_loadlib(t_val *a, t_val b) {
 }
 
 void t_div(t_val *a, t_val b) {
-	if(a->type & b.type & INT){
+	if(a->type == NONE){
+		a->type = b.type;
+		a->u = b.u;
+	}
+	else if(a->type & b.type & INT){
 		a->u.i /= b.u.i;
 	}
 	else if(a->type & b.type & FLOAT){
@@ -162,7 +183,7 @@ void t_print(t_val *a, t_val b) {
 
 t_val t_eval(struct t_node *root){
 	t_func func;
-	t_val ret = {INT, 0};
+	t_val ret = {NONE, 0};
 	struct t_node *child = root->child;
 	if(child == NULL){
 		return root->val;
@@ -182,14 +203,7 @@ t_val t_eval(struct t_node *root){
 			func = t_loadlib;
 		else{
 			func = t_print;
-			(*func)(&ret, t_eval(child));
-			return ret;
 		}
-	}
-	if(!(child->val.type & OP) && child->val.type & (INT | FLOAT)){
-		ret.type = child->val.type;
-		ret.u = child->val.u;
-		child = child->next;
 	}
 	while(child){
 		if(child->val.type & OP){
